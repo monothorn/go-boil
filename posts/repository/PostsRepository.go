@@ -22,7 +22,7 @@ func (cm *myPostsRepository) GetPosts(ctx context.Context) ([]*models.Post, erro
 	result := make([]*models.Post, 0)
 	t := new(models.Post)
 	t.PostTitle = "Big Data"
-	t.Comment = "Very good!!"
+	t.PostBody = "Very good!!"
 	result = append(result, t)
 
 	return result, nil
