@@ -34,6 +34,8 @@ func main() {
 	middL := middleware.InitMiddleware()
 	router.Use(middL.CORS)
 	cmR := _postsRepo.NewPostsRepository("apiv1")
+
+	
 	timeoutContext := time.Duration(viper.GetInt("context.timeout")) * time.Second
 	cmUC := postsUseCase.NewPostsUseCase(cmR, timeoutContext)
 	posts.NewPostsHandler(router, cmUC)
