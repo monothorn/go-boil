@@ -1,16 +1,21 @@
 package delivery
 
 import (
-	cmUseCase "monothorn/go-boil/posts"
+	"monothorn/go-boil/posts/models"
+	"monothorn/go-boil/posts/usecase"
 	"net/http"
 
-	"github.com/bxcodec/go-clean-arch/models"
 	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
 )
 
 type ResponseError struct {
 	Message string `json:"message"`
+}
+
+type PostData struct {
+	postTitle string
+	postBody  string
 }
 
 func getStatusCode(err error) int {
@@ -22,19 +27,14 @@ func getStatusCode(err error) int {
 	logrus.Error(err)
 	switch err {
 	case models.INTERNAL_SERVER_ERROR:
-
 		return http.StatusInternalServerError
-	case models.NOT_FOUND_ERROR:
-		return http.StatusNotFound
-	case models.CONFLIT_ERROR:
-		return http.StatusConflict
 	default:
 		return http.StatusInternalServerError
 	}
 }
 
 type PostsHandler struct {
-	cmUC cmUseCase.PostsUseCase
+	cmUC usecase.PostsUseCase
 }
 
 func (cm *PostsHandler) GetPosts(c echo.Context) error {
@@ -46,10 +46,25 @@ func (cm *PostsHandler) GetPosts(c echo.Context) error {
 	return c.JSON(http.StatusOK, listAr)
 }
 
-// NewCareerMovesHandler handles routing for feedback module
-func NewPostsHandler(r *echo.Echo, cmUC cmUseCase.PostsUseCase) {
+func (cm *PostsHandler) AddPost(c echo.Context) error {
+	ctx := c.Request().Context()
+	postData := models.Post{}
+	if err := c.Bind(&postData); err != nil {
+		return c.JSON(getStatusCode(err), ResponseError{Message: err.Error()})
+	}
+
+	msg, err := cm.cmUC.AddPost(ctx, &postData)
+	if err != nil {
+		return c.JSON(getStatusCode(err), ResponseError{Message: err.Error()})
+	}
+	return c.JSON(http.StatusOK, msg)
+}
+
+// NewPostsHandler handles routing for feedback module
+func NewPostsHandler(r *echo.Echo, cmUC usecase.PostsUseCase) {
 	handler := &PostsHandler{
 		cmUC: cmUC,
 	}
-	r.GET("/", handler.GetPosts)
+	r.GET("/posts", handler.GetPosts)
+	r.POST("/post", handler.AddPost)
 }
