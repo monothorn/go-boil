@@ -1,72 +1,110 @@
-package utilities
+package thirdparty
 
 import (
 	"gopkg.in/resty.v1"
 )
 
 type RequestUtility interface {
-	MakeGet(url string) (string, error)
+	makeRequest(url string, data map[string]string) (string, error)
+	makeJSONRequest(url string, data string) (string, error)
 }
 
 type requestConfig struct {
 	baseUrl        string
 	requestMethod  string
-	requestParams  map[string]string
 	requestHeaders map[string]string
 }
 
-func (rc *requestConfig) MakeGet(url string) (string, error) {
+func (rc *requestConfig) makeRequest(url string, data map[string]string) (string, error) {
 	resty.SetDebug(true)
 	resty.SetHeaders(rc.requestHeaders)
-	resty.SetQueryParams(rc.requestParams)
-
-	resp, err := resty.R().Get(rc.baseUrl + url)
-	if err != nil {
-		return "nil", err
+	resty.SetHostURL(rc.baseUrl)
+	if rc.requestMethod == "GET" || rc.requestMethod == "DELETE" {
+		resty.SetQueryParams(data)
 	}
-	return string(resp.Body()), nil
+	resty.SetContentLength(true)
+
+	switch rc.requestMethod {
+	case "GET":
+		resp, err := resty.R().Get(url)
+		if err != nil {
+			return "nil", err
+		}
+		return string(resp.Body()), nil
+	case "POST":
+		resp, err := resty.R().SetBody(data).Post(url)
+		if err != nil {
+			return "nil", err
+		}
+		return string(resp.Body()), nil
+	case "PUT":
+		resp, err := resty.R().SetBody(data).Put(url)
+		if err != nil {
+			return "nil", err
+		}
+		return string(resp.Body()), nil
+	case "PATCH":
+		resp, err := resty.R().SetBody(data).Patch(url)
+		if err != nil {
+			return "nil", err
+		}
+		return string(resp.Body()), nil
+	case "DELETE":
+		resp, err := resty.R().Delete(url)
+		if err != nil {
+			return "nil", err
+		}
+		return string(resp.Body()), nil
+	}
+
+	return "nil", nil
 }
 
-func (rc *requestConfig) MakeDelete(url string) (string, error) {
+func (rc *requestConfig) makeJSONRequest(url string, data string) (string, error) {
 	resty.SetDebug(true)
 	resty.SetHeaders(rc.requestHeaders)
+	resty.SetHostURL(rc.baseUrl)
+	resty.SetContentLength(true)
 
-	resp, err := resty.R().Delete(rc.baseUrl + url)
-	if err != nil {
-		return "nil", err
+	switch rc.requestMethod {
+	case "GET":
+		resp, err := resty.R().SetQueryString(data).Get(url)
+		if err != nil {
+			return "nil", err
+		}
+		return string(resp.Body()), nil
+	case "POST":
+		resp, err := resty.R().SetBody(data).Post(url)
+		if err != nil {
+			return "nil", err
+		}
+		return string(resp.Body()), nil
+	case "PUT":
+		resp, err := resty.R().SetBody(data).Put(url)
+		if err != nil {
+			return "nil", err
+		}
+		return string(resp.Body()), nil
+	case "PATCH":
+		resp, err := resty.R().SetBody(data).Patch(url)
+		if err != nil {
+			return "nil", err
+		}
+		return string(resp.Body()), nil
+	case "DELETE":
+		resp, err := resty.R().SetQueryString(data).Delete(url)
+		if err != nil {
+			return "nil", err
+		}
+		return string(resp.Body()), nil
 	}
-	return string(resp.Body()), nil
+
+	return "nil", nil
 }
 
-func (rc *requestConfig) MakePost(url string) (string, error) {
-	resty.SetDebug(true)
-	resty.SetHeaders(rc.requestHeaders)
-	resty.SetFormData(rc.requestParams)
-
-	resp, err := resty.R().Post(rc.baseUrl + url)
-
-	if err != nil {
-		return "nil", err
-	}
-	return string(resp.Body()), nil
-}
-
-func (rc *requestConfig) MakePut(url string) (string, error) {
-	resty.SetDebug(true)
-	resty.SetHeaders(rc.requestHeaders)
-	resty.SetFormData(rc.requestParams)
-
-	resp, err := resty.R().Put(rc.baseUrl + url)
-
-	if err != nil {
-		return "nil", err
-	}
-	return string(resp.Body()), nil
-}
-
-func NewRequestUtility(baseUrl string, requestMethod string, requestParams map[string]string, requestHeaders map[string]string) RequestUtility {
+func NewRequestUtility(baseUrl string, requestMethod string, requestHeaders map[string]string) RequestUtility {
 	return &requestConfig{
-		baseUrl, requestMethod, requestParams, requestHeaders,
+		baseUrl, requestMethod, requestHeaders,
 	}
 
 }
